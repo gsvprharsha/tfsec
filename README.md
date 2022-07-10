@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="354" src=".github/images/tfsec_worded.png">
+  <img width="354" src="https://github.com/kaisenlinux/tfsec/blob/main/tfsec.png">
 </p>
 
 [![GoReportCard](https://goreportcard.com/badge/github.com/aquasecurity/tfsec)](https://goreportcard.com/report/github.com/aquasecurity/tfsec)
