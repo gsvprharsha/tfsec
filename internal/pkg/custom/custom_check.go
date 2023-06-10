@@ -16,6 +16,7 @@ var ValidCheckActions = []CheckAction{
 	EndsWith,
 	Contains,
 	NotContains,
+	OnlyContains,
 	Equals,
 	NotEqual,
 	LessThan,
@@ -56,6 +57,9 @@ const Contains CheckAction = "contains"
 
 // NotContains checks that the named child attribute does not have a value in the map, list or attribute
 const NotContains CheckAction = "notContains"
+
+// OnlyContains checks that the slice only contains the values in the check value
+const OnlyContains CheckAction = "onlyContains"
 
 // Equals checks that the named child attribute has a value equal to the check value
 const Equals CheckAction = "equals"
@@ -119,6 +123,8 @@ type MatchSpec struct {
 // Check specifies the check definition represented in json/yaml
 type Check struct {
 	Code            string            `json:"code" yaml:"code"`
+	Provider        string            `json:"provider,omitempty" yaml:"provider,omitempty"`
+	Service         string            `json:"service,omitempty" yaml:"service,omitempty"`
 	Description     string            `json:"description" yaml:"description"`
 	RequiredTypes   []string          `json:"requiredTypes" yaml:"requiredTypes"`
 	RequiredLabels  []string          `json:"requiredLabels" yaml:"requiredLabels"`

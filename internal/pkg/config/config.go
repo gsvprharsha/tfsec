@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aquasecurity/defsec/pkg/severity"
 	"gopkg.in/yaml.v2"
@@ -17,6 +18,7 @@ type Config struct {
 	SeverityOverrides      map[string]string `json:"severity_overrides,omitempty" yaml:"severity_overrides,omitempty"`
 	ExcludedChecks         []string          `json:"exclude,omitempty" yaml:"exclude,omitempty"`
 	IncludedChecks         []string          `json:"include,omitempty" yaml:"include,omitempty"`
+	ExcludeIgnores         []string          `json:"exclude_ignores,omitempty" yaml:"exclude_ignores,omitempty"`
 	MinimumRequiredVersion string            `json:"min_required_version" yaml:"min_required_version,omitempty"`
 }
 
@@ -51,6 +53,25 @@ func LoadConfig(configFilePath string) (*Config, error) {
 	rewriteSeverityOverrides(config)
 
 	return config, nil
+}
+
+func (c *Config) GetValidExcludedChecks() (excludedChecks []string) {
+	for _, check := range c.ExcludedChecks {
+		if strings.Contains(check, ":") {
+			parts := strings.Split(check, ":")
+			if len(parts) == 2 {
+				if expiry, err := time.Parse("2006-01-02", parts[1]); err == nil {
+					if expiry.Before(time.Now()) {
+						continue
+					}
+				}
+			}
+			excludedChecks = append(excludedChecks, parts[0])
+		} else {
+			excludedChecks = append(excludedChecks, check)
+		}
+	}
+	return excludedChecks
 }
 
 func rewriteSeverityOverrides(config *Config) {

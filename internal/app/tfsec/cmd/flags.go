@@ -33,6 +33,7 @@ var format string
 var softFail bool
 var filterResults string
 var excludedRuleIDs string
+var excludeIgnoresIDs string
 var tfvarsPaths []string
 var excludePaths []string
 var outputFlag string
@@ -74,10 +75,11 @@ func configureFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&migrateIgnores, "migrate-ignores", false, "Migrate ignore codes to the new ID structure")
 	cmd.Flags().StringVarP(&format, "format", "f", "lovely", "Select output format: lovely, json, csv, checkstyle, junit, sarif, text, markdown, html, gif. To use multiple formats, separate with a comma and specify a base output filename with --out. A file will be written for each type. The first format will additionally be written stdout.")
 	cmd.Flags().StringVarP(&excludedRuleIDs, "exclude", "e", "", "Provide comma-separated list of rule IDs to exclude from run.")
+	cmd.Flags().StringVarP(&excludeIgnoresIDs, "exclude-ignores", "E", "", "Provide comma-separated list of ignored rule to exclude from run.")
 	cmd.Flags().StringVar(&filterResults, "filter-results", "", "Filter results to return specific checks only (supports comma-delimited input).")
 	cmd.Flags().BoolVarP(&softFail, "soft-fail", "s", false, "Runs checks but suppresses error code")
 	cmd.Flags().StringSliceVar(&tfvarsPaths, "tfvars-file", nil, "Path to .tfvars file, can be used multiple times and evaluated in order of specification")
-	cmd.Flags().StringSliceVar(&tfvarsPaths, "var-file", nil, "Path to .tfvars file, can be used multiple times and evaluated in order of specification (same functionaility as --tfvars-file but consistent with Terraform)")
+	cmd.Flags().StringSliceVar(&tfvarsPaths, "var-file", nil, "Path to .tfvars file, can be used multiple times and evaluated in order of specification (same functionality as --tfvars-file but consistent with Terraform)")
 	cmd.Flags().StringSliceVar(&excludePaths, "exclude-path", nil, "Folder path to exclude, can be used multiple times and evaluated in order of specification")
 	cmd.Flags().StringVarP(&outputFlag, "out", "O", "", "Set output file. This filename will have a format descriptor appended if multiple formats are specified with --format")
 	cmd.Flags().StringVar(&customCheckDir, "custom-check-dir", "", "Explicitly set the custom checks dir location")
@@ -138,9 +140,6 @@ func excludeFunc(excludePaths []string) func(results scan.Results) scan.Results 
 	return func(results scan.Results) scan.Results {
 		for i, result := range results {
 			rng := result.Range()
-			if rng == nil {
-				continue
-			}
 			for _, exclude := range excludePaths {
 				exclude = fmt.Sprintf("%c%s%[1]c", filepath.Separator, filepath.Clean(exclude))
 				if strings.Contains(
@@ -170,7 +169,7 @@ func configureOptions(cmd *cobra.Command, fsRoot, dir string) ([]options.Scanner
 		scanner.ScannerWithAlternativeIDProvider(legacy.FindIDs),
 		options.ScannerWithPolicyNamespaces("custom"),
 		scanner.ScannerWithDownloadsAllowed(!noModuleDownloads),
-		scanner.ScannerWithRegoOnly(regoOnly),
+		options.ScannerWithRegoOnly(regoOnly),
 		options.ScannerWithEmbeddedPolicies(true),
 	)
 
@@ -214,6 +213,10 @@ func configureOptions(cmd *cobra.Command, fsRoot, dir string) ([]options.Scanner
 
 	if excludedRuleIDs != "" {
 		scannerOptions = append(scannerOptions, scanner.ScannerWithExcludedRules(strings.Split(excludedRuleIDs, ",")))
+	}
+
+	if excludeIgnoresIDs != "" {
+		scannerOptions = append(scannerOptions, scanner.ScannerWithExcludeIgnores(strings.Split(excludeIgnoresIDs, ",")))
 	}
 
 	if debug {
@@ -282,8 +285,11 @@ func applyConfigFiles(options []options.ScannerOption, dir string) ([]options.Sc
 			if len(conf.IncludedChecks) > 0 {
 				options = append(options, scanner.ScannerWithIncludedRules(conf.IncludedChecks))
 			}
-			if len(conf.ExcludedChecks) > 0 {
-				options = append(options, scanner.ScannerWithExcludedRules(append(conf.ExcludedChecks, excludedRuleIDs)))
+			if len(conf.GetValidExcludedChecks()) > 0 {
+				options = append(options, scanner.ScannerWithExcludedRules(append(conf.GetValidExcludedChecks(), excludedRuleIDs)))
+			}
+			if len(conf.ExcludeIgnores) > 0 {
+				options = append(options, scanner.ScannerWithExcludeIgnores(append(conf.ExcludeIgnores, excludeIgnoresIDs)))
 			}
 		} else {
 			logger.Log("Failed to load config file: %s", err)

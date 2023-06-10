@@ -7,11 +7,12 @@ export GO111MODULE=on
 %:
 	dh $@ --buildsystem=golang
 
+override_dh_auto_clean:
+	rm -rf $(CURDIR)/obj-x86_64-linux-gnu
+
 override_dh_auto_build:
 	go mod vendor
 	make build
-	make generate-docs
-	make publish-docs
 
 override_dh_auto_install:
 	dh_auto_install -- --no-source

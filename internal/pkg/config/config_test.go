@@ -37,11 +37,52 @@ severity_overrides:
 
 exclude:
   - DP001
+
+exclude_ignores:
+  - DP002
 `
 	c := load(t, "config.yaml", content)
 
 	assert.Contains(t, c.SeverityOverrides, "AWS018")
-	assert.Contains(t, c.ExcludedChecks, "DP001")
+	assert.Contains(t, c.GetValidExcludedChecks(), "DP001")
+	assert.Contains(t, c.ExcludeIgnores, "DP002")
+}
+
+func TestExpiredExcludesElementsFromYAMLNotPresent(t *testing.T) {
+	content := `
+severity_overrides:
+  AWS018: LOW
+
+exclude:
+  - DP001:2021-01-01
+
+exclude_ignores:
+  - DP002
+`
+	c := load(t, "config.yaml", content)
+
+	assert.Contains(t, c.SeverityOverrides, "AWS018")
+	assert.Len(t, c.GetValidExcludedChecks(), 0)
+	assert.Contains(t, c.ExcludeIgnores, "DP002")
+}
+
+func TestExcludesElementsFromYAMLWithFutureExpiryIsPresent(t *testing.T) {
+	content := `
+severity_overrides:
+  AWS018: LOW
+
+exclude:
+  - DP001:3099-01-01
+
+exclude_ignores:
+  - DP002
+`
+	c := load(t, "config.yaml", content)
+
+	assert.Contains(t, c.SeverityOverrides, "AWS018")
+	assert.Len(t, c.GetValidExcludedChecks(), 1)
+	assert.Contains(t, c.GetValidExcludedChecks(), "DP001")
+	assert.Contains(t, c.ExcludeIgnores, "DP002")
 }
 
 func TestExcludesElementsFromYML(t *testing.T) {
@@ -51,11 +92,15 @@ severity_overrides:
 
 exclude:
   - DP001
+
+exclude_ignores:
+  - DP002
 `
 	c := load(t, "config.yml", content)
 
 	assert.Contains(t, c.SeverityOverrides, "AWS018")
-	assert.Contains(t, c.ExcludedChecks, "DP001")
+	assert.Contains(t, c.GetValidExcludedChecks(), "DP001")
+	assert.Contains(t, c.ExcludeIgnores, "DP002")
 }
 
 func TestExcludesElementsFromJSON(t *testing.T) {
@@ -65,13 +110,17 @@ func TestExcludesElementsFromJSON(t *testing.T) {
   },
   "exclude": [
     "DP001"
+  ],
+  "exclude_ignores": [
+    "DP002"
   ]
 }
 `
 	c := load(t, "config.json", content)
 
 	assert.Contains(t, c.SeverityOverrides, "AWS018")
-	assert.Contains(t, c.ExcludedChecks, "DP001")
+	assert.Contains(t, c.GetValidExcludedChecks(), "DP001")
+	assert.Contains(t, c.ExcludeIgnores, "DP002")
 }
 
 func TestWarningIsRewrittenAsMedium(t *testing.T) {

@@ -1,14 +1,20 @@
 Author: Kevin Chevreuil - Kaisen <kaisen@kaisenlinux.org>
 
---- tfsec-1.4.2.orig/scripts/build.sh
-+++ tfsec-1.4.2/scripts/build.sh
-@@ -7,12 +7,5 @@ export CGO_ENABLED=0
- export GOFLAGS=-mod=vendor
+--- tfsec-1.28.0.orig/scripts/build.sh
++++ tfsec-1.28.0/scripts/build.sh
+@@ -2,17 +2,10 @@
+ 
+ BINARY=tfsec
+ CHECK_GEN_BINARY=tfsec-checkgen
+-TAG=${TRAVIS_TAG:-development}
++TAG=1.28.1
+ GO111MODULE=on
+ export CGO_ENABLED=0
  args=(-ldflags "-X github.com/aquasecurity/tfsec/version.Version=${TAG} -s -w -extldflags '-fno-PIC -static'")
  
 -mkdir -p bin/darwin
 -GOOS=darwin GOARCH=amd64 go build -o bin/darwin/${BINARY}-darwin-amd64 "${args[@]}" ./cmd/tfsec/
--GOOS=darwin GOARCH=amd64 go build -o bin/darwin/${CHECK_GEN_BINARY}-darwin-amd64 "${args[@]}" ./cmd/tfsec-checkgen/
+-GOOS=darwin GOARCH=amd64 go build -o ./bin/darwin/${CHECK_GEN_BINARY}-darwin-amd64 "${args[@]}" ./cmd/tfsec-checkgen/
 -mkdir -p bin/linux
 -GOOS=linux GOARCH=amd64 go build -o bin/linux/${BINARY}-linux-amd64 "${args[@]}" ./cmd/tfsec/
 -GOOS=linux GOARCH=amd64 go build -o bin/linux/${CHECK_GEN_BINARY}-linux-amd64 "${args[@]}" ./cmd/tfsec-checkgen/

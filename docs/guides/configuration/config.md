@@ -106,6 +106,24 @@ exclude:
   - aws-s3-enable-versioning
 ```
 
+Excludes can include an expiry date, after which the check will be re-enabled.
+
+```json
+{
+  "exclude": ["CUS002:2022-12-31", "aws-s3-enable-versioning"]
+}
+```
+
+or in yaml
+
+
+```yaml
+---
+exclude:
+  - CUS002:2022-12-31
+  - aws-s3-enable-versioning
+```
+
 ### Minimum required version
 
 For your CI you might want to pull a config file into all of your build processes with a centrally managed config file. If this is the case, you might also want to require a minimum tfsec version to be used.
@@ -117,6 +135,7 @@ This can be achieved in the config file using the `min_required_version` setting
 {
   "min_required_version": "v1.1.2"
 }
+```
 
 or in yaml
 
